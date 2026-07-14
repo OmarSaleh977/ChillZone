@@ -47,7 +47,7 @@ function dungeonButtons(uniqueKey, offer) {
 async function refreshDungeonEmbed(offer, uniqueKey, env, threadId) {
   const token = env.BOT_TOKEN;
   const db = env.DB;
-  const rankRow = await db.prepare("SELECT dungeonRuns FROM user_ranks WHERE userId = ?").get(offer.userId);
+  const rankRow = await db.prepare("SELECT dungeonRuns FROM user_ranks WHERE userId = ?").first(offer.userId);
   const rank = getRank(rankRow?.dungeonRuns || 0);
   const webhook = await getOrCreateWebhook(offer.channelId, token, db);
   await editWebhookMessage(webhook.id, webhook.token, offer.messageId, {
@@ -151,7 +151,7 @@ export async function handleDungeonInteraction(interaction, env) {
     if (!cut) return ephemeral("Cut is required!");
 
     const uniqueKey = crypto.randomUUID();
-    const rankRow = await db.prepare("SELECT dungeonRuns FROM user_ranks WHERE userId = ?").get(user.id);
+    const rankRow = await db.prepare("SELECT dungeonRuns FROM user_ranks WHERE userId = ?").first(user.id);
     const rank = getRank(rankRow?.dungeonRuns || 0);
     const dChannelId = env.DUNGEON_OFFERS_CHANNEL_ID;
     const webhook = await getOrCreateWebhook(dChannelId, token, db);
@@ -198,7 +198,7 @@ export async function handleDungeonInteraction(interaction, env) {
 
   if (customId.startsWith("apply_dungeon_")) {
     const uniqueKey = customId.split("_")[2];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer is no longer available!");
     if (row.claimed) return ephemeral("This offer has been claimed!");
     if (row.userId === user.id) return ephemeral("You cannot apply to your own offer!");
@@ -207,7 +207,7 @@ export async function handleDungeonInteraction(interaction, env) {
 
   if (customId.startsWith("start_dungeon_")) {
     const uniqueKey = customId.split("_")[2];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer is no longer available!");
     if (row.userId !== user.id) return ephemeral("Only the owner can start the run!");
     const groupData = row.groupData ? JSON.parse(row.groupData) : {};
@@ -220,7 +220,7 @@ export async function handleDungeonInteraction(interaction, env) {
 
   if (customId.startsWith("reopen_dungeon_")) {
     const uniqueKey = customId.split("_")[2];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer is no longer available!");
     if (row.userId !== user.id) return ephemeral("Only the owner can reopen!");
     const groupData = row.groupData ? JSON.parse(row.groupData) : {};
@@ -235,7 +235,7 @@ export async function handleDungeonInteraction(interaction, env) {
 
   if (customId.startsWith("gg_key_done_")) {
     const uniqueKey = customId.split("_")[3];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer is no longer available!");
     if (user.id !== env.BOT_OWNER_ID && user.id !== row.userId) return ephemeral("Only bot/offer owner can mark as done!");
     await db.prepare("UPDATE dungeon_offers SET claimed = 1 WHERE uniqueKey = ?").run(uniqueKey);
@@ -249,7 +249,7 @@ export async function handleDungeonInteraction(interaction, env) {
     const uniqueKey = parts[2];
     const targetUserId = parts[3];
     if (targetUserId !== user.id) return ephemeral("You can only cancel your own signup!");
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer is no longer available!");
     const groupData = row.groupData ? JSON.parse(row.groupData) : {};
     if (groupData.tank === user.id) { groupData.tank = null; groupData.tankHasKey = null; }
@@ -272,7 +272,7 @@ export async function handleDungeonInteraction(interaction, env) {
     const uniqueKey = parts[2];
     const memberId = parts[3];
     const role = parts[4];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer is no longer available!");
     if (row.userId !== user.id) return ephemeral("Only the owner can kick members!");
     const groupData = row.groupData ? JSON.parse(row.groupData) : {};
@@ -297,7 +297,7 @@ export async function handleDungeonInteraction(interaction, env) {
     const rowKeys = await db.prepare("SELECT uniqueKey FROM dungeon_offers").all();
     const match = rowKeys.find(r => r.uniqueKey.startsWith(shortKey));
     if (!match) return ephemeral("Offer not found!");
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").get(match.uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(match.uniqueKey);
     if (!row) return ephemeral("Offer not found!");
     if (row.userId !== user.id) return ephemeral("Only owner can reject!");
     let pending = row.pendingApplicants ? JSON.parse(row.pendingApplicants) : [];

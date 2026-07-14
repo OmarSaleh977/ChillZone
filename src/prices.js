@@ -126,13 +126,13 @@ export async function updatePrices(db) {
   if (g2gUsd !== null && binanceEgp !== null) {
     egpPerMillion = g2gUsd * binanceEgp;
   } else if (g2gUsd !== null) {
-    const row = await db.prepare("SELECT binance_egp_per_usdt FROM gold_prices WHERE id = 1").get();
+    const row = await db.prepare("SELECT binance_egp_per_usdt FROM gold_prices WHERE id = 1").first();
     if (row?.binance_egp_per_usdt) {
       binanceEgp = row.binance_egp_per_usdt;
       egpPerMillion = g2gUsd * binanceEgp;
     }
   } else if (binanceEgp !== null) {
-    const row = await db.prepare("SELECT g2g_usd_per_million FROM gold_prices WHERE id = 1").get();
+    const row = await db.prepare("SELECT g2g_usd_per_million FROM gold_prices WHERE id = 1").first();
     if (row?.g2g_usd_per_million) {
       g2gUsd = row.g2g_usd_per_million;
       egpPerMillion = g2gUsd * binanceEgp;
@@ -154,5 +154,5 @@ export async function updatePrices(db) {
 }
 
 export async function getPrices(db) {
-  return db.prepare("SELECT * FROM gold_prices WHERE id = 1").get();
+  return db.prepare("SELECT * FROM gold_prices WHERE id = 1").first();
 }

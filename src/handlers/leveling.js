@@ -102,7 +102,7 @@ export async function handleLevelingInteraction(interaction, env) {
 
   if (customId.startsWith("apply_leveling_")) {
     const uniqueKey = customId.replace("apply_leveling_", "");
-    const row = await db.prepare("SELECT * FROM leveling_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM leveling_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("العرض ده مش موجود!");
     if (row.claimed) return ephemeral("العرض ده اتقفل بالفعل!");
     if (row.userId === user.id) return ephemeral("ما تقدرش تقفل عرضك بنفسك!");
@@ -146,7 +146,7 @@ export async function handleLevelingInteraction(interaction, env) {
 
   if (customId.startsWith("complete_leveling_")) {
     const uniqueKey = customId.replace("complete_leveling_", "");
-    const row = await db.prepare("SELECT * FROM leveling_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM leveling_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("العرض ده مش موجود!");
     if (row.userId !== user.id) return ephemeral("بس صاحب العرض يقدر يقفل!");
 

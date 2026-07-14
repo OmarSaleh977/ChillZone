@@ -106,7 +106,7 @@ export async function handleAccountInteraction(interaction, env) {
 
   if (customId.startsWith("claim_")) {
     const uniqueKey = customId.replace("claim_", "");
-    const row = await db.prepare("SELECT * FROM account_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM account_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("Offer not found!");
     if (row.claimed) return ephemeral("This offer is already claimed!");
 

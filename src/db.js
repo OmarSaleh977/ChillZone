@@ -19,7 +19,7 @@ export async function initDatabase(db) {
 }
 
 export async function getState(db, key) {
-  const row = await db.prepare("SELECT data, expiresAt FROM interaction_state WHERE key = ?").get(key);
+  const row = await db.prepare("SELECT data, expiresAt FROM interaction_state WHERE key = ?").first(key);
   if (!row) return null;
   if (row.expiresAt < Date.now()) {
     await db.prepare("DELETE FROM interaction_state WHERE key = ?").run(key);

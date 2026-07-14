@@ -214,7 +214,7 @@ export async function handleGoldInteraction(interaction, env) {
 
   if (customId.startsWith("apply_gold_")) {
     const uniqueKey = customId.replace("apply_gold_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.completed || parseQuantity(row.remainingAmount || "0") <= 0) return ephemeral("This offer is closed!");
     if (row.userId === user.id) return ephemeral("You can't apply to your own offer!");
@@ -231,7 +231,7 @@ export async function handleGoldInteraction(interaction, env) {
 
   if (customId.startsWith("apply_gold_modal_")) {
     const uniqueKey = customId.replace("apply_gold_modal_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.completed) return ephemeral("This offer is closed!");
 
@@ -297,7 +297,7 @@ export async function handleGoldInteraction(interaction, env) {
 
   if (customId.startsWith("edit_gold_")) {
     const uniqueKey = customId.replace("edit_gold_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.userId !== user.id) return ephemeral("You can only edit your own offer!");
     const currentPriceNum = row.price?.split(" ")[0] || "";
@@ -313,7 +313,7 @@ export async function handleGoldInteraction(interaction, env) {
 
   if (customId.startsWith("edit_offer_modal_")) {
     const uniqueKey = customId.replace("edit_offer_modal_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.userId !== user.id) return ephemeral("You can only edit your own offer!");
 
@@ -355,7 +355,7 @@ export async function handleGoldInteraction(interaction, env) {
 
   if (customId.startsWith("delete_gold_")) {
     const uniqueKey = customId.replace("delete_gold_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").get(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.userId !== user.id) return ephemeral("You can only delete your own offer!");
 
