@@ -56,13 +56,14 @@ function goldEmbed(offer, applicantsText) {
 }
 
 function goldButtons(uniqueKey, offer) {
-  const disabled = offer.completed || parseQuantity(offer.remainingAmount || "0") <= 0;
+  const isFullyClaimed = parseQuantity(offer.remainingAmount || "0") <= 0;
   return [
     {
       type: 1,
       components: [
-        { type: 2, custom_id: `apply_gold_${uniqueKey}`, label: "Apply", style: 3, emoji: { name: "✅" }, disabled },
-        { type: 2, custom_id: `edit_gold_${uniqueKey}`, label: "Edit", style: 2, emoji: { name: "✏️" } },
+        { type: 2, custom_id: `apply_gold_${uniqueKey}`, label: "Apply", style: 3, emoji: { name: "✅" }, disabled: isFullyClaimed || offer.completed },
+        { type: 2, custom_id: `close_gold_${uniqueKey}`, label: "Close", style: 4, emoji: { name: "🔒" }, disabled: offer.completed },
+        { type: 2, custom_id: `edit_gold_${uniqueKey}`, label: "Edit", style: 2, emoji: { name: "✏️" }, disabled: offer.completed },
         { type: 2, custom_id: `delete_gold_${uniqueKey}`, label: "Delete", style: 4, emoji: { name: "🗑️" } },
       ],
     },
@@ -327,6 +328,32 @@ export async function handleGoldInteraction(interaction, env) {
     });
 
     return ephemeral("Offer updated! 🎉");
+  }
+
+  if (customId.startsWith("close_gold_")) {
+    const uniqueKey = customId.replace("close_gold_", "");
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
+    if (!row) return ephemeral("This offer no longer exists!");
+    if (row.userId !== user.id) return ephemeral("You can only close your own offer!");
+    if (row.completed) return ephemeral("Offer is already closed!");
+
+    await db.prepare("UPDATE gold_offers SET completed = 1 WHERE uniqueKey = ?").bind(uniqueKey).run();
+
+    const webhook = await getOrCreateWebhook(row.channelId, token, db);
+    const member = await fetchMember(interaction.guild_id, row.userId, token);
+    const displayName = member?.nick || "User";
+    const avatarURL = `https://cdn.discordapp.com/avatars/${row.userId}/${member?.avatar || "0"}.png?size=256`;
+    let applicants = row.applicants ? JSON.parse(row.applicants) : [];
+    const updatedOffer = { ...row, completed: true };
+
+    await editWebhookMessage(webhook.id, webhook.token, row.messageId, {
+      embeds: [goldEmbed(updatedOffer, formatApplicants(applicants))],
+      components: goldButtons(uniqueKey, updatedOffer),
+      username: `${displayName} ${row.operation === "WTS" ? "🟩 WTS" : "🟦 WTB"}`,
+      avatar_url: avatarURL,
+    });
+
+    return ephemeral("🔒 Offer closed!");
   }
 
   if (customId.startsWith("delete_gold_")) {
