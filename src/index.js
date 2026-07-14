@@ -113,6 +113,7 @@ export default {
 };
 
 async function routeInteraction(customId, interaction, env) {
+  interaction.customId = customId;
   if (customId === "gold_price_button") return handleGoldPriceInteraction(interaction, env);
   if (customId === "gold_button") return handleGoldInteraction(interaction, env);
   if (customId === "gold_wts" || customId === "gold_wtb") return handleGoldInteraction(interaction, env);
