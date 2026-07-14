@@ -134,11 +134,6 @@ export async function handleGoldInteraction(interaction, env) {
         },
         {
           type: 1, components: [
-            { type: 4, custom_id: "payment_method", label: "Payment Method", style: 1, required: true, placeholder: "Vodafone Cash / USDT" },
-          ],
-        },
-        {
-          type: 1, components: [
             { type: 4, custom_id: "payment_char", label: "Payment Character (optional)", style: 1, required: false, placeholder: "Character name or leave empty" },
           ],
         },
@@ -153,35 +148,27 @@ export async function handleGoldInteraction(interaction, env) {
 
     const goldAmountInput = interaction.data.components?.[0]?.components?.[0]?.value?.trim();
     const customPriceInput = interaction.data.components?.[1]?.components?.[0]?.value?.trim();
-    const paymentMethodInput = interaction.data.components?.[2]?.components?.[0]?.value?.trim();
-    const paymentCharInput = interaction.data.components?.[3]?.components?.[0]?.value?.trim() || "N/A";
+    const paymentCharInput = interaction.data.components?.[2]?.components?.[0]?.value?.trim() || "N/A";
 
-    if (!goldAmountInput || !customPriceInput || !paymentMethodInput) {
-      return ephemeral("All fields are required (Payment Character is optional)!");
+    if (!goldAmountInput || !customPriceInput) {
+      return ephemeral("Quantity and price are required!");
     }
 
     const goldAmountNum = parseQuantity(goldAmountInput);
     if (goldAmountNum <= 0) return ephemeral("Invalid quantity! Enter at least 100.");
 
-    const customPriceNum = parseFloat(customPriceInput);
-    if (isNaN(customPriceNum) || customPriceNum <= 0) return ephemeral("Invalid price!");
+    const customPriceInputLower = customPriceInput.toLowerCase();
+    const isUSDT = customPriceInputLower.includes("usdt");
+    const priceNum = parseFloat(customPriceInput.replace(/[^0-9.]/g, ""));
+    if (isNaN(priceNum) || priceNum <= 0) return ephemeral("Invalid price!");
 
-    const paymentLower = paymentMethodInput.toLowerCase();
-    const isUSDT = paymentLower.includes("usdt");
-    const isVodafone = paymentLower.includes("vodafone") || paymentLower.includes("cash");
-
-    let unit = "EGP";
-    if (isUSDT) unit = "USDT";
-    else if (!isVodafone) {
-      return ephemeral("Payment method must be either **Vodafone Cash** or **USDT**!");
-    }
-
-    if (unit === "EGP" && customPriceNum < 100) {
+    const unit = isUSDT ? "USDT" : "EGP";
+    if (unit === "EGP" && priceNum < 100) {
       return ephemeral("Minimum price is **100 EGP** per 1M!");
     }
 
     const paymentDisplay = isUSDT ? "USDT" : "Vodafone Cash";
-    const price = `${customPriceNum} ${unit} / 1M`;
+    const price = `${priceNum} ${unit} / 1M`;
     const uniqueKey = crypto.randomUUID();
     const goldChannelId = env.GOLD_CHANNEL_ID;
 
