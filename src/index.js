@@ -5,7 +5,7 @@ import { handleLevelingInteraction } from "./handlers/leveling.js";
 import { handleDungeonInteraction } from "./handlers/dungeons.js";
 import { handleAccountInteraction } from "./handlers/accounts.js";
 import { handleGoldPriceInteraction, handleGameOn, handleWelcomeVerify } from "./handlers/misc.js";
-import { updatePrices, fetchEGPRate, fetchG2GPrice } from "./prices.js";
+import { updatePrices, fetchEGPRate } from "./prices.js";
 
 export default {
   async scheduled(event, env, ctx) {
@@ -43,15 +43,6 @@ export default {
       try {
         const price = await fetchEGPRate();
         return Response.json({ success: true, egp_per_usd: price });
-      } catch (e) {
-        return Response.json({ success: false, error: e.message });
-      }
-    }
-
-    if (url.pathname === "/debug-g2g") {
-      try {
-        const price = await fetchG2GPrice();
-        return Response.json({ success: true, price });
       } catch (e) {
         return Response.json({ success: false, error: e.message });
       }

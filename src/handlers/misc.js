@@ -36,7 +36,7 @@ export async function handleGoldPriceInteraction(interaction, env) {
 
   if (egpPerMillion) {
     fields.push(
-      { name: "Gold / 1M", value: `\`${Math.round(egpPerMillion).toLocaleString()} EGP\``, inline: true },
+      { name: "Gold / 1M (EGP)", value: `\`${Math.round(egpPerMillion).toLocaleString()} EGP\``, inline: true },
     );
   }
 
