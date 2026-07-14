@@ -22,7 +22,7 @@ function formatQuantity(qty) {
   return num.toString();
 }
 
-const GALAXY_PURPLE = 0x7C3AED;
+const GALAXY_PURPLE = 0x4C1D95;
 
 function goldEmoji(operation) {
   return operation === "WTS" ? "🟩" : "🟦";
@@ -48,7 +48,6 @@ function goldEmbed(offer, applicantsText) {
 
   return {
     color: GALAXY_PURPLE,
-    title: `${emoji} ${offer.operation} Gold`,
     description: `<@${offer.userId}>`,
     fields,
     timestamp: offer.createdAt || new Date().toISOString(),
