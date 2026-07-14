@@ -36,10 +36,8 @@ function goldEmbed(offer, applicantsText) {
   const payChar = offer.characterName && offer.characterName !== "N/A" ? offer.characterName : "—";
 
   const fields = [
-    { name: "Price", value: `\`${offer.price || "N/A"}\``, inline: true },
-    { name: "Quantity", value: `\`${formatNumber(offer.goldAmount)}\``, inline: true },
-    { name: "Status", value: status, inline: true },
-    { name: "Remaining", value: `\`${formatNumber(offer.remainingAmount)}\``, inline: true },
+    { name: "Offer", value: `\`${formatNumber(offer.goldAmount)}\` gold @ \`${offer.price || "N/A"}\``, inline: true },
+    { name: status, value: `Remaining: \`${formatNumber(offer.remainingAmount)}\``, inline: true },
     { name: "Character", value: `\`${payChar}\``, inline: true },
   ];
 
