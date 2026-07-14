@@ -14,7 +14,7 @@ export async function handleGoldPriceInteraction(interaction, env) {
         embeds: [{
           title: "WoW Gold Prices",
           description: "Prices not available yet. Updating every 5 minutes...",
-          color: 0xff0000,
+          color: 0x800080,
           thumbnail: { url: avatarURL },
         }],
         flags: EPHEMERAL,
@@ -62,7 +62,7 @@ export async function handleGameOn(interaction, env) {
   const targetChannelId = "1425206436404789318";
 
   const embed = {
-    color: 0x7B1FA2,
+    color: 0x800080,
     title: "Game On ✅",
     description: "WoW servers are live now",
     fields: [{ name: "Online Since", value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: false }],
