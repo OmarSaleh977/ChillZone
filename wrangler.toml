@@ -1,0 +1,17 @@
+name = "chillzone-bot"
+main = "src/index.js"
+compatibility_date = "2024-09-25"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chillzone-db"
+database_id = "f69837e4-9858-4863-852b-9d9ab84c28e2"
+
+[vars]
+GOLD_CHANNEL_ID = "1390339828163416165"
+LEVELING_CHANNEL_ID = "1387279927589736468"
+DUNGEON_OFFERS_CHANNEL_ID = "1421225106645979236"
+ACCOUNT_CHANNEL_ID = "1387481295101104278"
+BOT_OWNER_ID = "711027724663128106"
+TICKET_CHANNEL_ID = "1390339772714848316"

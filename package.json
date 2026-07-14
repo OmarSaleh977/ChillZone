@@ -1,11 +1,16 @@
 {
+  "name": "chillzone-bot",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute chillzone-db --remote --file=./schema.sql"
+  },
   "dependencies": {
-    "@androz2091/discord-invites-tracker": "^1.2.3",
-    "@snazzah/davey": "^0.1.9",
-    "better-sqlite3": "^12.6.0",
-    "discord.js": "^14.25.1",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "uuid": "^13.0.0"
+    "@noble/ed25519": "^2.1.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
   }
 }
