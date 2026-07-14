@@ -30,15 +30,13 @@ export async function handleGoldPriceInteraction(interaction, env) {
     : "N/A";
 
   const fields = [
-    { name: "G2G Price", value: `\`$${g2gUsd.toFixed(2)} / 1M\``, inline: true },
-    { name: "USDT/EGP", value: `\`${binanceEgp ? binanceEgp.toFixed(2) : "N/A"} EGP\``, inline: true },
+    { name: "Gold / 1M", value: `\`$${g2gUsd.toFixed(2)}\``, inline: true },
+    { name: "USD / EGP", value: `\`${binanceEgp ? binanceEgp.toFixed(2) : "N/A"}\``, inline: true },
   ];
 
   if (egpPerMillion) {
-    fields.push({ name: "\u200b", value: "**Calculated**", inline: false });
     fields.push(
-      { name: "EGP / 1M", value: `\`${Math.round(egpPerMillion).toLocaleString()} EGP\``, inline: true },
-      { name: "USD / 1M", value: `\`$${g2gUsd.toFixed(2)}\``, inline: true },
+      { name: "Gold / 1M", value: `\`${Math.round(egpPerMillion).toLocaleString()} EGP\``, inline: true },
     );
   }
 
