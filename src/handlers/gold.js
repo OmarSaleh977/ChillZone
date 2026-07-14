@@ -22,7 +22,7 @@ function formatQuantity(qty) {
   return num.toString();
 }
 
-const GALAXY_PURPLE = 0x4C1D95;
+const GALAXY_PURPLE = 0x800080;
 
 function goldEmoji(operation) {
   return operation === "WTS" ? "🟩" : "🟦";
@@ -188,23 +188,6 @@ export async function handleGoldInteraction(interaction, env) {
     return ephemeral(`${goldEmoji(operation)} **${operation} offer posted!** 🎉\n> Quantity: \`${formatNumber(goldAmountNum)}\` @ \`${price}\`\n> Payment: \`${paymentDisplay}\`\n\nCheck <#${goldChannelId}>`);
   }
 
-  if (customId.startsWith("apply_gold_")) {
-    const uniqueKey = customId.replace("apply_gold_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
-    if (!row) return ephemeral("This offer no longer exists!");
-    if (row.completed || parseQuantity(row.remainingAmount || "0") <= 0) return ephemeral("This offer is closed!");
-    if (row.userId === user.id) return ephemeral("You can't apply to your own offer!");
-
-    return modal({
-      custom_id: `apply_gold_modal_${uniqueKey}`,
-      title: `Apply — ${row.operation}`,
-      components: [{
-        type: 1,
-        components: [{ type: 4, custom_id: "apply_amount", label: `Amount to ${row.operation === "WTS" ? "buy" : "sell"}`, style: 1, required: true, placeholder: `Max: ${formatNumber(row.remainingAmount)}` }],
-      }],
-    });
-  }
-
   if (customId.startsWith("apply_gold_modal_")) {
     const uniqueKey = customId.replace("apply_gold_modal_", "");
     const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
@@ -269,6 +252,23 @@ export async function handleGoldInteraction(interaction, env) {
     try { await sendDM(row.userId, token, `Your ${row.operation} offer has a new applicant: <@${user.id}> for ${formatNumber(applyAmountNum)}! 🎉`); } catch {}
 
     return ephemeral(`Applied for ${formatNumber(applyAmountNum)} gold! 🎉 Thread created: <#${thread.id}>`);
+  }
+
+  if (customId.startsWith("apply_gold_")) {
+    const uniqueKey = customId.replace("apply_gold_", "");
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
+    if (!row) return ephemeral("This offer no longer exists!");
+    if (row.completed || parseQuantity(row.remainingAmount || "0") <= 0) return ephemeral("This offer is closed!");
+    if (row.userId === user.id) return ephemeral("You can't apply to your own offer!");
+
+    return modal({
+      custom_id: `apply_gold_modal_${uniqueKey}`,
+      title: `Apply — ${row.operation}`,
+      components: [{
+        type: 1,
+        components: [{ type: 4, custom_id: "apply_amount", label: `Amount to ${row.operation === "WTS" ? "buy" : "sell"}`, style: 1, required: true, placeholder: `Max: ${formatNumber(row.remainingAmount)}` }],
+      }],
+    });
   }
 
   if (customId.startsWith("edit_gold_")) {
