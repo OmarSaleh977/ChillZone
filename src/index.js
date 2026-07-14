@@ -5,7 +5,7 @@ import { handleLevelingInteraction } from "./handlers/leveling.js";
 import { handleDungeonInteraction } from "./handlers/dungeons.js";
 import { handleAccountInteraction } from "./handlers/accounts.js";
 import { handleGoldPriceInteraction, handleGameOn, handleWelcomeVerify } from "./handlers/misc.js";
-import { updatePrices, fetchEGPRate } from "./prices.js";
+import { updatePrices } from "./prices.js";
 
 export default {
   async scheduled(event, env, ctx) {
@@ -30,28 +30,21 @@ export default {
       return new Response("ChillZone Bot is running on Cloudflare Workers!");
     }
 
-    if (url.pathname === "/test-prices") {
+    if (url.pathname === "/debug-gold-page") {
       try {
-        const result = await updatePrices(env.DB);
-        return Response.json(result);
+        const r = await fetch("https://egcurrency.com/en/currency/USD-to-EGP/gold", { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" } });
+        const html = await r.text();
+        const prices = [];
+        const regex = /(\d{2,3}\.\d{2,4})/g;
+        let m;
+        while ((m = regex.exec(html)) !== null) {
+          const p = parseFloat(m[1]);
+          if (p > 40 && p < 120) prices.push({ pos: m.index, val: p, ctx: html.slice(Math.max(0, m.index - 80), m.index + 30) });
+        }
+        return Response.json({ ok: r.ok, length: html.length, priceMatches: prices.slice(0, 20) });
       } catch (e) {
-        return Response.json({ success: false, error: e.message });
+        return Response.json({ error: e.message });
       }
-    }
-
-    if (url.pathname === "/debug-binance") {
-      try {
-        const price = await fetchEGPRate();
-        return Response.json({ success: true, egp_per_usd: price });
-      } catch (e) {
-        return Response.json({ success: false, error: e.message });
-      }
-    }
-
-    if (url.pathname === "/debug-moneyconvert") {
-      const res = await fetch("https://cdn.moneyconvert.net/api/latest.json");
-      const json = await res.json();
-      return Response.json({ EGP: json.rates?.EGP, USD: json.rates?.USD });
     }
 
     if (url.pathname === "/setup" && request.method === "POST") {

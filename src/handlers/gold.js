@@ -22,47 +22,35 @@ function formatQuantity(qty) {
   return num.toString();
 }
 
-function goldColor(operation) {
-  return operation === "WTS" ? 0x2ecc71 : 0x3498db;
-}
+const GALAXY_PURPLE = 0x7C3AED;
 
 function goldEmoji(operation) {
   return operation === "WTS" ? "🟩" : "🟦";
 }
 
 function goldEmbed(offer, applicantsText) {
-  const isWTS = offer.operation === "WTS";
-  const color = goldColor(offer.operation);
   const emoji = goldEmoji(offer.operation);
   const remaining = parseQuantity(offer.remainingAmount || "0");
-  const total = parseQuantity(offer.goldAmount || "0");
   const fullyClaimed = remaining <= 0;
-
-  const statusLine = fullyClaimed ? "🔴 Fully Claimed" : "🟢 Available";
-
-  const fields = [
-    { name: "Price", value: `\`${offer.price || "N/A"}\``, inline: true },
-    { name: "Quantity", value: `\`${formatNumber(offer.goldAmount)}\``, inline: true },
-    { name: "Payment", value: `\`${offer.paymentMethod || "N/A"}\``, inline: true },
-    { name: "Remaining", value: `\`${formatNumber(offer.remainingAmount)}\``, inline: true },
-    { name: "Status", value: statusLine, inline: true },
+  const status = fullyClaimed ? "🔴 Claimed" : "🟢 Available";
+  const payChar = offer.characterName && offer.characterName !== "N/A" ? ` | Char: \`${offer.characterName}\`` : "";
+  const lines = [
+    `${emoji} <@${offer.userId}>`,
+    `\`${formatNumber(offer.goldAmount)}\` gold @ \`${offer.price || "N/A"}\``,
+    `Payment: \`${offer.paymentMethod || "N/A"}\`${payChar}`,
+    `${status} | Remaining: \`${formatNumber(offer.remainingAmount)}\``,
   ];
 
-  if (offer.characterName && offer.characterName !== "N/A") {
-    fields.push({ name: "Payment Character", value: `\`${offer.characterName}\``, inline: true });
-  }
-
+  const fields = [];
   if (applicantsText && applicantsText !== "None") {
-    fields.push({ name: "\u200b", value: "**Applicants**", inline: false });
-    fields.push({ name: "\u200b", value: applicantsText, inline: false });
+    fields.push({ name: "Applicants", value: applicantsText, inline: false });
   }
 
   return {
-    color,
-    title: `${emoji} ${offer.operation} Gold Offer`,
-    description: `<@${offer.userId}>`,
+    color: GALAXY_PURPLE,
+    title: `${emoji} ${offer.operation} Gold`,
+    description: lines.join("\n"),
     fields,
-    footer: { text: "ChillZone Gold Trading" },
     timestamp: offer.createdAt || new Date().toISOString(),
   };
 }
