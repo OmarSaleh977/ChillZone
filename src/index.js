@@ -119,6 +119,8 @@ async function routeInteraction(customId, interaction, env) {
     { pattern: /^apply_gold_modal_/, handler: handleGoldInteraction },
     { pattern: /^apply_gold_/, handler: handleGoldInteraction },
     { pattern: /^close_gold_/, handler: handleGoldInteraction },
+    { pattern: /^confirm_gold_post_/, handler: handleGoldInteraction },
+    { pattern: /^cancel_gold_post_/, handler: handleGoldInteraction },
     { pattern: /^edit_gold_/, handler: handleGoldInteraction },
     { pattern: /^delete_gold_/, handler: handleGoldInteraction },
     { pattern: /^edit_offer_modal_/, handler: handleGoldInteraction },
