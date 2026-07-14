@@ -95,7 +95,7 @@ export default {
       return Response.json({ type: 1 });
     }
 
-    if (interaction.type === 3) {
+    if (interaction.type === 3 || interaction.type === 5) {
       const customId = interaction.data?.custom_id || "";
       try {
         const res = await routeInteraction(customId, interaction, env);
