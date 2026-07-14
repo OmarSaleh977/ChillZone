@@ -1,7 +1,8 @@
 import { ephemeral, getOrCreateWebhook, sendWebhookMessage, editWebhookMessage, fetchMember, modal, EPHEMERAL } from "../discord.js";
 
 export async function handleAccountInteraction(interaction, env) {
-  const { customId, user } = interaction;
+  const { customId } = interaction;
+  const user = interaction.user || interaction.member?.user;
   const db = env.DB;
   const token = env.BOT_TOKEN;
 

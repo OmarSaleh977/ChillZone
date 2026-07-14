@@ -25,7 +25,8 @@ function levelingButtons(uniqueKey, offer) {
 }
 
 export async function handleLevelingInteraction(interaction, env) {
-  const { customId, user } = interaction;
+  const { customId } = interaction;
+  const user = interaction.user || interaction.member?.user;
   const db = env.DB;
   const token = env.BOT_TOKEN;
 

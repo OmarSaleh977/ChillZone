@@ -57,7 +57,8 @@ async function refreshDungeonEmbed(offer, uniqueKey, env, threadId) {
 }
 
 export async function handleDungeonInteraction(interaction, env) {
-  const { customId, user } = interaction;
+  const { customId } = interaction;
+  const user = interaction.user || interaction.member?.user;
   const db = env.DB;
   const token = env.BOT_TOKEN;
 
