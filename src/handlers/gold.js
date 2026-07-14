@@ -197,7 +197,7 @@ export async function handleGoldInteraction(interaction, env) {
           `⚠️ **سعرك أقل من سعر الجولد الحالي!**\n\n` +
           `سعر الجولد الآن: **${Math.round(dbGoldPriceEGP).toLocaleString()} EGP / 1M**\n` +
           `سعرك: **${Math.round(userPriceEGP).toLocaleString()} EGP / 1M**\n\n` +
-          `مش هينزل العرض低于 سعر الجولد.`
+          `الحد الأدنى للسعر هو **100 EGP**.`
         );
       }
     }
