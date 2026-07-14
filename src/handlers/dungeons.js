@@ -47,7 +47,7 @@ function dungeonButtons(uniqueKey, offer) {
 async function refreshDungeonEmbed(offer, uniqueKey, env, threadId) {
   const token = env.BOT_TOKEN;
   const db = env.DB;
-  const rankRow = await db.prepare("SELECT dungeonRuns FROM user_ranks WHERE userId = ?").first(offer.userId);
+  const rankRow = await db.prepare("SELECT dungeonRuns FROM user_ranks WHERE userId = ?").bind(offer.userId).first();
   const rank = getRank(rankRow?.dungeonRuns || 0);
   const webhook = await getOrCreateWebhook(offer.channelId, token, db);
   await editWebhookMessage(webhook.id, webhook.token, offer.messageId, {
@@ -151,7 +151,7 @@ export async function handleDungeonInteraction(interaction, env) {
     if (!cut) return ephemeral("Cut is required!");
 
     const uniqueKey = crypto.randomUUID();
-    const rankRow = await db.prepare("SELECT dungeonRuns FROM user_ranks WHERE userId = ?").first(user.id);
+    const rankRow = await db.prepare("SELECT dungeonRuns FROM user_ranks WHERE userId = ?").bind(user.id).first();
     const rank = getRank(rankRow?.dungeonRuns || 0);
     const dChannelId = env.DUNGEON_OFFERS_CHANNEL_ID;
     const webhook = await getOrCreateWebhook(dChannelId, token, db);
@@ -191,14 +191,14 @@ export async function handleDungeonInteraction(interaction, env) {
 
     await db.prepare(
       "INSERT OR REPLACE INTO dungeon_offers (uniqueKey, type, userId, userTag, dungeon, keystoneLevel, runType, stack, numberOfRuns, cut, claimed, messageId, groupData, pendingApplicants, threadId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).run(uniqueKey, "dungeon", user.id, user.username, dungeon, kLevel, runType, stack, numRuns, cut, 0, msg.id, JSON.stringify(offerData.groupData), "[]", thread.id);
+    ).bind(uniqueKey, "dungeon", user.id, user.username, dungeon, kLevel, runType, stack, numRuns, cut, 0, msg.id, JSON.stringify(offerData.groupData), "[]", thread.id).run();
 
     return ephemeral(`Dungeon offer created! Check <#${dChannelId}>.`);
   }
 
   if (customId.startsWith("apply_dungeon_")) {
     const uniqueKey = customId.split("_")[2];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer is no longer available!");
     if (row.claimed) return ephemeral("This offer has been claimed!");
     if (row.userId === user.id) return ephemeral("You cannot apply to your own offer!");
@@ -207,12 +207,12 @@ export async function handleDungeonInteraction(interaction, env) {
 
   if (customId.startsWith("start_dungeon_")) {
     const uniqueKey = customId.split("_")[2];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer is no longer available!");
     if (row.userId !== user.id) return ephemeral("Only the owner can start the run!");
     const groupData = row.groupData ? JSON.parse(row.groupData) : {};
     groupData.claimed = true;
-    await db.prepare("UPDATE dungeon_offers SET claimed = 1 WHERE uniqueKey = ?").run(uniqueKey);
+    await db.prepare("UPDATE dungeon_offers SET claimed = 1 WHERE uniqueKey = ?").bind(uniqueKey).run();
     const updatedOffer = { ...row, claimed: true, groupData };
     await refreshDungeonEmbed(updatedOffer, uniqueKey, env);
     return ephemeral("Run started! Coordinate in the thread.");
@@ -220,14 +220,14 @@ export async function handleDungeonInteraction(interaction, env) {
 
   if (customId.startsWith("reopen_dungeon_")) {
     const uniqueKey = customId.split("_")[2];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer is no longer available!");
     if (row.userId !== user.id) return ephemeral("Only the owner can reopen!");
     const groupData = row.groupData ? JSON.parse(row.groupData) : {};
     groupData.tank = null; groupData.healer = null; groupData.dps = [];
     groupData.tankRating = null; groupData.healerRating = null; groupData.dpsRatings = [];
     groupData.tankHasKey = null; groupData.healerHasKey = null; groupData.dpsHasKeys = [];
-    await db.prepare("UPDATE dungeon_offers SET claimed = 0, groupData = ?, pendingApplicants = '[]' WHERE uniqueKey = ?").run(JSON.stringify(groupData), uniqueKey);
+    await db.prepare("UPDATE dungeon_offers SET claimed = 0, groupData = ?, pendingApplicants = '[]' WHERE uniqueKey = ?").bind(JSON.stringify(groupData), uniqueKey).run();
     const updatedOffer = { ...row, claimed: false, groupData, pendingApplicants: [] };
     await refreshDungeonEmbed(updatedOffer, uniqueKey, env);
     return ephemeral("Offer reopened!");
@@ -235,10 +235,10 @@ export async function handleDungeonInteraction(interaction, env) {
 
   if (customId.startsWith("gg_key_done_")) {
     const uniqueKey = customId.split("_")[3];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer is no longer available!");
     if (user.id !== env.BOT_OWNER_ID && user.id !== row.userId) return ephemeral("Only bot/offer owner can mark as done!");
-    await db.prepare("UPDATE dungeon_offers SET claimed = 1 WHERE uniqueKey = ?").run(uniqueKey);
+    await db.prepare("UPDATE dungeon_offers SET claimed = 1 WHERE uniqueKey = ?").bind(uniqueKey).run();
     const groupData = row.groupData ? JSON.parse(row.groupData) : {};
     await refreshDungeonEmbed({ ...row, claimed: true, groupData }, uniqueKey, env);
     return ephemeral("Key marked as done!");
@@ -249,7 +249,7 @@ export async function handleDungeonInteraction(interaction, env) {
     const uniqueKey = parts[2];
     const targetUserId = parts[3];
     if (targetUserId !== user.id) return ephemeral("You can only cancel your own signup!");
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer is no longer available!");
     const groupData = row.groupData ? JSON.parse(row.groupData) : {};
     if (groupData.tank === user.id) { groupData.tank = null; groupData.tankHasKey = null; }
@@ -260,7 +260,7 @@ export async function handleDungeonInteraction(interaction, env) {
     }
     let pending = row.pendingApplicants ? JSON.parse(row.pendingApplicants) : [];
     pending = pending.filter(a => a.userId !== user.id);
-    await db.prepare("UPDATE dungeon_offers SET groupData = ?, pendingApplicants = ?, claimed = 0 WHERE uniqueKey = ?").run(JSON.stringify(groupData), JSON.stringify(pending), uniqueKey);
+    await db.prepare("UPDATE dungeon_offers SET groupData = ?, pendingApplicants = ?, claimed = 0 WHERE uniqueKey = ?").bind(JSON.stringify(groupData), JSON.stringify(pending), uniqueKey).run();
     if (row.threadId) await removeThreadMember(row.threadId, user.id, token).catch(() => {});
     const updatedOffer = { ...row, groupData, pendingApplicants: pending, claimed: false };
     await refreshDungeonEmbed(updatedOffer, uniqueKey, env);
@@ -272,7 +272,7 @@ export async function handleDungeonInteraction(interaction, env) {
     const uniqueKey = parts[2];
     const memberId = parts[3];
     const role = parts[4];
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer is no longer available!");
     if (row.userId !== user.id) return ephemeral("Only the owner can kick members!");
     const groupData = row.groupData ? JSON.parse(row.groupData) : {};
@@ -283,7 +283,7 @@ export async function handleDungeonInteraction(interaction, env) {
       if (idx >= 0) { groupData.dps.splice(idx, 1); groupData.dpsRatings?.splice(idx, 1); groupData.dpsHasKeys?.splice(idx, 1); }
     }
     if (row.threadId) await removeThreadMember(row.threadId, memberId, token).catch(() => {});
-    await db.prepare("UPDATE dungeon_offers SET groupData = ?, claimed = 0 WHERE uniqueKey = ?").run(JSON.stringify(groupData), uniqueKey);
+    await db.prepare("UPDATE dungeon_offers SET groupData = ?, claimed = 0 WHERE uniqueKey = ?").bind(JSON.stringify(groupData), uniqueKey).run();
     const updatedOffer = { ...row, groupData, claimed: false };
     await refreshDungeonEmbed(updatedOffer, uniqueKey, env);
     try { await sendDM(memberId, token, `You have been kicked from the ${row.dungeon} ${keystoneDisplay(row.keystoneLevel)} group.`); } catch {}
@@ -297,12 +297,12 @@ export async function handleDungeonInteraction(interaction, env) {
     const rowKeys = await db.prepare("SELECT uniqueKey FROM dungeon_offers").all();
     const match = rowKeys.find(r => r.uniqueKey.startsWith(shortKey));
     if (!match) return ephemeral("Offer not found!");
-    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").first(match.uniqueKey);
+    const row = await db.prepare("SELECT * FROM dungeon_offers WHERE uniqueKey = ?").bind(match.uniqueKey).first();
     if (!row) return ephemeral("Offer not found!");
     if (row.userId !== user.id) return ephemeral("Only owner can reject!");
     let pending = row.pendingApplicants ? JSON.parse(row.pendingApplicants) : [];
     pending = pending.filter(a => a.userId !== applicantId);
-    await db.prepare("UPDATE dungeon_offers SET pendingApplicants = ? WHERE uniqueKey = ?").run(JSON.stringify(pending), match.uniqueKey);
+    await db.prepare("UPDATE dungeon_offers SET pendingApplicants = ? WHERE uniqueKey = ?").bind(JSON.stringify(pending), match.uniqueKey).run();
     const updatedOffer = { ...row, pendingApplicants: pending };
     await refreshDungeonEmbed(updatedOffer, match.uniqueKey, env);
     try { await sendDM(applicantId, token, `Your application for ${row.dungeon} ${keystoneDisplay(row.keystoneLevel)} has been rejected.`); } catch {}

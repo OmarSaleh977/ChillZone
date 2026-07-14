@@ -95,14 +95,14 @@ export async function handleLevelingInteraction(interaction, env) {
     offer.messageId = msg.id;
     await db.prepare(
       "INSERT OR REPLACE INTO leveling_offers (uniqueKey, userId, levelRange, price, faction, messageId, channelId, threadId, claimed, claimedBy, completed, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).run(uniqueKey, user.id, levelRange, price, faction, msg.id, levelingChannelId, null, 0, null, 0, new Date().toISOString());
+    ).bind(uniqueKey, user.id, levelRange, price, faction, msg.id, levelingChannelId, null, 0, null, 0, new Date().toISOString()).run();
 
     return ephemeral(`عرض الليفلينج لـ ${faction} اتبعت بنجاح في <#${levelingChannelId}>! 🎉`);
   }
 
   if (customId.startsWith("apply_leveling_")) {
     const uniqueKey = customId.replace("apply_leveling_", "");
-    const row = await db.prepare("SELECT * FROM leveling_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM leveling_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("العرض ده مش موجود!");
     if (row.claimed) return ephemeral("العرض ده اتقفل بالفعل!");
     if (row.userId === user.id) return ephemeral("ما تقدرش تقفل عرضك بنفسك!");
@@ -122,8 +122,8 @@ export async function handleLevelingInteraction(interaction, env) {
       content: `<@${row.userId}> و <@${user.id}>، ده ثريد خاص لمناقشة عرض الليفلينج لـ ${row.levelRange} (${row.faction}). 🎉`,
     });
 
-    await db.prepare("UPDATE leveling_offers SET claimed = 1, claimedBy = ?, threadId = ? WHERE uniqueKey = ?").run(user.id, thread.id, uniqueKey);
-    await db.prepare("INSERT OR REPLACE INTO ticket_threads (threadId, channelId, messageId, creatorId, offerUniqueKey, createdAt) VALUES (?, ?, ?, ?, ?, ?)").run(thread.id, levelingChannelId, row.messageId, user.id, uniqueKey, new Date().toISOString());
+    await db.prepare("UPDATE leveling_offers SET claimed = 1, claimedBy = ?, threadId = ? WHERE uniqueKey = ?").bind(user.id, thread.id, uniqueKey).run();
+    await db.prepare("INSERT OR REPLACE INTO ticket_threads (threadId, channelId, messageId, creatorId, offerUniqueKey, createdAt) VALUES (?, ?, ?, ?, ?, ?)").bind(thread.id, levelingChannelId, row.messageId, user.id, uniqueKey, new Date().toISOString()).run();
 
     const factionEmoji = row.faction === "Horde" ? "🐺" : "🦁";
     const webhook = await getOrCreateWebhook(levelingChannelId, token, db);
@@ -146,11 +146,11 @@ export async function handleLevelingInteraction(interaction, env) {
 
   if (customId.startsWith("complete_leveling_")) {
     const uniqueKey = customId.replace("complete_leveling_", "");
-    const row = await db.prepare("SELECT * FROM leveling_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM leveling_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("العرض ده مش موجود!");
     if (row.userId !== user.id) return ephemeral("بس صاحب العرض يقدر يقفل!");
 
-    await db.prepare("UPDATE leveling_offers SET completed = 1 WHERE uniqueKey = ?").run(uniqueKey);
+    await db.prepare("UPDATE leveling_offers SET completed = 1 WHERE uniqueKey = ?").bind(uniqueKey).run();
 
     const tickets = await db.prepare("SELECT * FROM ticket_threads").all();
     let deletedCount = 0;

@@ -207,14 +207,14 @@ export async function handleGoldInteraction(interaction, env) {
     offer.messageId = msg.id;
     await db.prepare(
       "INSERT OR REPLACE INTO gold_offers (uniqueKey, userId, operation, goldAmount, remainingAmount, price, paymentMethod, characterName, messageId, channelId, threadId, claimed, applicants, completed, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).run(uniqueKey, offer.userId, offer.operation, offer.goldAmount, offer.remainingAmount, offer.price, offer.paymentMethod, offer.characterName, offer.messageId, offer.channelId, offer.threadId, 0, "[]", 0, offer.createdAt);
+    ).bind(uniqueKey, offer.userId, offer.operation, offer.goldAmount, offer.remainingAmount, offer.price, offer.paymentMethod, offer.characterName, offer.messageId, offer.channelId, offer.threadId, 0, "[]", 0, offer.createdAt).run();
 
     return ephemeral(`${goldEmoji(operation)} **${operation} offer posted!** 🎉\n> Quantity: \`${formatNumber(goldAmountNum)}\` @ \`${price}\`\n> Payment: \`${paymentDisplay}\`\n\nCheck <#${goldChannelId}>`);
   }
 
   if (customId.startsWith("apply_gold_")) {
     const uniqueKey = customId.replace("apply_gold_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.completed || parseQuantity(row.remainingAmount || "0") <= 0) return ephemeral("This offer is closed!");
     if (row.userId === user.id) return ephemeral("You can't apply to your own offer!");
@@ -231,7 +231,7 @@ export async function handleGoldInteraction(interaction, env) {
 
   if (customId.startsWith("apply_gold_modal_")) {
     const uniqueKey = customId.replace("apply_gold_modal_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.completed) return ephemeral("This offer is closed!");
 
@@ -273,10 +273,10 @@ export async function handleGoldInteraction(interaction, env) {
     const isFullyClaimed = parseFloat(newRemaining) <= 0;
 
     await db.prepare("UPDATE gold_offers SET remainingAmount = ?, applicants = ?, claimed = ?, completed = ? WHERE uniqueKey = ?")
-      .run(newRemaining, JSON.stringify(applicants), isFullyClaimed ? 1 : 0, isFullyClaimed ? 1 : 0, uniqueKey);
+      .bind(newRemaining, JSON.stringify(applicants), isFullyClaimed ? 1 : 0, isFullyClaimed ? 1 : 0, uniqueKey).run();
 
     await db.prepare("INSERT OR REPLACE INTO ticket_threads (threadId, channelId, messageId, creatorId, offerUniqueKey, createdAt) VALUES (?, ?, ?, ?, ?, ?)")
-      .run(thread.id, goldChannelId, row.messageId, user.id, uniqueKey, new Date().toISOString());
+      .bind(thread.id, goldChannelId, row.messageId, user.id, uniqueKey, new Date().toISOString()).run();
 
     const updatedOffer = { ...row, remainingAmount: newRemaining, applicants, completed: isFullyClaimed, claimed: isFullyClaimed };
     const member = await fetchMember(interaction.guild_id, row.userId, token);
@@ -297,7 +297,7 @@ export async function handleGoldInteraction(interaction, env) {
 
   if (customId.startsWith("edit_gold_")) {
     const uniqueKey = customId.replace("edit_gold_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.userId !== user.id) return ephemeral("You can only edit your own offer!");
     const currentPriceNum = row.price?.split(" ")[0] || "";
@@ -313,7 +313,7 @@ export async function handleGoldInteraction(interaction, env) {
 
   if (customId.startsWith("edit_offer_modal_")) {
     const uniqueKey = customId.replace("edit_offer_modal_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.userId !== user.id) return ephemeral("You can only edit your own offer!");
 
@@ -335,7 +335,7 @@ export async function handleGoldInteraction(interaction, env) {
     let applicants = row.applicants ? JSON.parse(row.applicants) : [];
 
     await db.prepare("UPDATE gold_offers SET goldAmount = ?, remainingAmount = ?, price = ? WHERE uniqueKey = ?")
-      .run(newAmountNum.toString(), newAmountNum.toString(), price, uniqueKey);
+      .bind(newAmountNum.toString(), newAmountNum.toString(), price, uniqueKey).run();
 
     const updatedOffer = { ...row, goldAmount: newAmountNum.toString(), remainingAmount: newAmountNum.toString(), price, applicants };
     const webhook = await getOrCreateWebhook(row.channelId, token, db);
@@ -355,7 +355,7 @@ export async function handleGoldInteraction(interaction, env) {
 
   if (customId.startsWith("delete_gold_")) {
     const uniqueKey = customId.replace("delete_gold_", "");
-    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("This offer no longer exists!");
     if (row.userId !== user.id) return ephemeral("You can only delete your own offer!");
 
@@ -364,7 +364,7 @@ export async function handleGoldInteraction(interaction, env) {
         const webhook = await getOrCreateWebhook(row.channelId, token, db);
         await deleteWebhookMessage(webhook.id, webhook.token, row.messageId);
       }
-      await db.prepare("DELETE FROM gold_offers WHERE uniqueKey = ?").run(uniqueKey);
+      await db.prepare("DELETE FROM gold_offers WHERE uniqueKey = ?").bind(uniqueKey).run();
     } catch {}
 
     return ephemeral("Offer deleted! 🎉");

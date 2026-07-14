@@ -5,7 +5,7 @@ import { handleLevelingInteraction } from "./handlers/leveling.js";
 import { handleDungeonInteraction } from "./handlers/dungeons.js";
 import { handleAccountInteraction } from "./handlers/accounts.js";
 import { handleGoldPriceInteraction, handleGameOn, handleWelcomeVerify } from "./handlers/misc.js";
-import { updatePrices, fetchBinanceEGP, fetchG2GPrice } from "./prices.js";
+import { updatePrices, fetchEGPRate, fetchG2GPrice } from "./prices.js";
 
 export default {
   async scheduled(event, env, ctx) {
@@ -31,14 +31,18 @@ export default {
     }
 
     if (url.pathname === "/test-prices") {
-      const result = await updatePrices(env.DB);
-      return Response.json(result);
+      try {
+        const result = await updatePrices(env.DB);
+        return Response.json(result);
+      } catch (e) {
+        return Response.json({ success: false, error: e.message });
+      }
     }
 
     if (url.pathname === "/debug-binance") {
       try {
-        const price = await fetchBinanceEGP();
-        return Response.json({ success: true, price });
+        const price = await fetchEGPRate();
+        return Response.json({ success: true, egp_per_usd: price });
       } catch (e) {
         return Response.json({ success: false, error: e.message });
       }
@@ -62,9 +66,9 @@ export default {
     if (url.pathname === "/setup" && request.method === "POST") {
       try {
         await initDatabase(env.DB);
-        return respond("Database initialized successfully!");
+        return Response.json({ success: true, message: "Database initialized" });
       } catch (e) {
-        return respond("Error: " + e.message);
+        return Response.json({ success: false, error: e.message });
       }
     }
 

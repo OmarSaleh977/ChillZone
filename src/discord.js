@@ -34,11 +34,11 @@ export async function api(method, path, token, body = null) {
 }
 
 export async function getOrCreateWebhook(channelId, token, db) {
-  const cached = await db.prepare("SELECT webhookId, webhookToken FROM webhooks WHERE channelId = ?").first(channelId);
+  const cached = await db.prepare("SELECT webhookId, webhookToken FROM webhooks WHERE channelId = ?").bind(channelId).first();
   if (cached) return { id: cached.webhookId, token: cached.webhookToken };
   const wh = await api("POST", `/channels/${channelId}/webhooks`, token, { name: "ChillZoneBot" });
   if (!wh || !wh.id) throw new Error("Failed to create webhook");
-  await db.prepare("INSERT OR REPLACE INTO webhooks (channelId, webhookId, webhookToken) VALUES (?, ?, ?)").run(channelId, wh.id, wh.token);
+  await db.prepare("INSERT OR REPLACE INTO webhooks (channelId, webhookId, webhookToken) VALUES (?, ?, ?)").bind(channelId, wh.id, wh.token).run();
   return { id: wh.id, token: wh.token };
 }
 

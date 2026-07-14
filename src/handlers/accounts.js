@@ -99,18 +99,18 @@ export async function handleAccountInteraction(interaction, env) {
 
     await db.prepare(
       "INSERT INTO account_offers (uniqueKey, type, userId, userTag, operation, quantity, price, paymentMethod, messageId, channelId, claimed, claimedBy, completed, createdAt, embed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).run(uniqueKey, "account", user.id, displayName, operation, null, price, paymentMethod === "Vodafone" ? "Vodafone Cash" : "USDT", msg.id, accChannelId, 0, null, 0, new Date().toISOString(), JSON.stringify(embed));
+    ).bind(uniqueKey, "account", user.id, displayName, operation, null, price, paymentMethod === "Vodafone" ? "Vodafone Cash" : "USDT", msg.id, accChannelId, 0, null, 0, new Date().toISOString(), JSON.stringify(embed)).run();
 
     return ephemeral(`${operation} account offer submitted in <#${accChannelId}>! 🎉`);
   }
 
   if (customId.startsWith("claim_")) {
     const uniqueKey = customId.replace("claim_", "");
-    const row = await db.prepare("SELECT * FROM account_offers WHERE uniqueKey = ?").first(uniqueKey);
+    const row = await db.prepare("SELECT * FROM account_offers WHERE uniqueKey = ?").bind(uniqueKey).first();
     if (!row) return ephemeral("Offer not found!");
     if (row.claimed) return ephemeral("This offer is already claimed!");
 
-    await db.prepare("UPDATE account_offers SET claimed = 1, claimedBy = ? WHERE uniqueKey = ?").run(user.id, uniqueKey);
+    await db.prepare("UPDATE account_offers SET claimed = 1, claimedBy = ? WHERE uniqueKey = ?").bind(user.id, uniqueKey).run();
 
     const embedData = JSON.parse(row.embed);
     embedData.fields = [
