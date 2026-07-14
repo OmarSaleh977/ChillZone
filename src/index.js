@@ -1,12 +1,17 @@
-import { verifyInteraction, ephemeral, respond, defer, update, modal, EPHEMERAL } from "./discord.js";
+import { verifyInteraction, ephemeral, respond, EPHEMERAL } from "./discord.js";
 import { initDatabase } from "./db.js";
 import { handleGoldInteraction } from "./handlers/gold.js";
 import { handleLevelingInteraction } from "./handlers/leveling.js";
 import { handleDungeonInteraction } from "./handlers/dungeons.js";
 import { handleAccountInteraction } from "./handlers/accounts.js";
 import { handleGoldPriceInteraction, handleGameOn, handleWelcomeVerify } from "./handlers/misc.js";
+import { updatePrices, fetchBinanceEGP, fetchG2GPrice } from "./prices.js";
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(updatePrices(env.DB));
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
@@ -23,6 +28,35 @@ export default {
 
     if (url.pathname === "/") {
       return new Response("ChillZone Bot is running on Cloudflare Workers!");
+    }
+
+    if (url.pathname === "/test-prices") {
+      const result = await updatePrices(env.DB);
+      return Response.json(result);
+    }
+
+    if (url.pathname === "/debug-binance") {
+      try {
+        const price = await fetchBinanceEGP();
+        return Response.json({ success: true, price });
+      } catch (e) {
+        return Response.json({ success: false, error: e.message });
+      }
+    }
+
+    if (url.pathname === "/debug-g2g") {
+      try {
+        const price = await fetchG2GPrice();
+        return Response.json({ success: true, price });
+      } catch (e) {
+        return Response.json({ success: false, error: e.message });
+      }
+    }
+
+    if (url.pathname === "/debug-moneyconvert") {
+      const res = await fetch("https://cdn.moneyconvert.net/api/latest.json");
+      const json = await res.json();
+      return Response.json({ EGP: json.rates?.EGP, USD: json.rates?.USD });
     }
 
     if (url.pathname === "/setup" && request.method === "POST") {
@@ -64,7 +98,13 @@ export default {
         return Response.json(res);
       } catch (err) {
         console.error(`Error handling ${customId}:`, err.message, err.stack);
-        return Response.json(ephemeral("حدث خطأ، جرب تاني!"));
+        return Response.json({
+          type: 4,
+          data: {
+            content: `⚠️ **Error:** ${err.message}`,
+            flags: EPHEMERAL,
+          },
+        });
       }
     }
 
@@ -75,6 +115,7 @@ export default {
 async function routeInteraction(customId, interaction, env) {
   if (customId === "gold_price_button") return handleGoldPriceInteraction(interaction, env);
   if (customId === "gold_button") return handleGoldInteraction(interaction, env);
+  if (customId === "gold_wts" || customId === "gold_wtb") return handleGoldInteraction(interaction, env);
   if (customId === "leveling_button") return handleLevelingInteraction(interaction, env);
   if (customId === "dungeon_button") return handleDungeonInteraction(interaction, env);
   if (customId === "account_button") return handleAccountInteraction(interaction, env);

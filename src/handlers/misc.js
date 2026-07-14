@@ -1,17 +1,58 @@
 import { ephemeral, respond, sendMessage, fetchMember, EPHEMERAL } from "../discord.js";
+import { getPrices } from "../prices.js";
 
 export async function handleGoldPriceInteraction(interaction, env) {
-  const goldPriceData = { usd: 44, egp: 2290 };
+  const db = env.DB;
+  const prices = await getPrices(db);
+
   const avatarURL = "https://i.imgur.com/3MM7jPp.png";
+
+  if (!prices || !prices.g2g_usd_per_million) {
+    return {
+      type: 4,
+      data: {
+        embeds: [{
+          title: "WoW Gold Prices",
+          description: "Prices not available yet. Updating every 5 minutes...",
+          color: 0xff0000,
+          thumbnail: { url: avatarURL },
+        }],
+        flags: EPHEMERAL,
+      },
+    };
+  }
+
+  const g2gUsd = prices.g2g_usd_per_million;
+  const binanceEgp = prices.binance_egp_per_usdt;
+  const egpPerMillion = prices.egp_per_million;
+  const lastUpdated = prices.last_updated
+    ? `<t:${Math.floor(new Date(prices.last_updated).getTime() / 1000)}:R>`
+    : "N/A";
+
+  const fields = [
+    { name: "G2G Price", value: `\`$${g2gUsd.toFixed(2)} / 1M\``, inline: true },
+    { name: "USDT/EGP", value: `\`${binanceEgp ? binanceEgp.toFixed(2) : "N/A"} EGP\``, inline: true },
+  ];
+
+  if (egpPerMillion) {
+    fields.push({ name: "\u200b", value: "**Calculated**", inline: false });
+    fields.push(
+      { name: "EGP / 1M", value: `\`${Math.round(egpPerMillion).toLocaleString()} EGP\``, inline: true },
+      { name: "USD / 1M", value: `\`$${g2gUsd.toFixed(2)}\``, inline: true },
+    );
+  }
+
+  fields.push({ name: "Updated", value: lastUpdated, inline: false });
 
   return {
     type: 4,
     data: {
       embeds: [{
-        title: "WoW Gold Prices",
-        description: `:flag_eg: ${goldPriceData.egp} EGP\n:flag_us: ${goldPriceData.usd} USD`,
+        title: "WoW Gold Prices — Live",
         color: 0x800080,
         thumbnail: { url: avatarURL },
+        fields,
+        footer: { text: "Updated every 5 min" },
       }],
       flags: EPHEMERAL,
     },

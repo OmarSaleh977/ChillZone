@@ -108,6 +108,14 @@ CREATE TABLE IF NOT EXISTS interaction_state (
   expiresAt INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS gold_prices (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  g2g_usd_per_million REAL,
+  binance_egp_per_usdt REAL,
+  egp_per_million REAL,
+  last_updated TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_gold_offers_completed ON gold_offers(completed);
 CREATE INDEX IF NOT EXISTS idx_gold_offers_userId ON gold_offers(userId);
 CREATE INDEX IF NOT EXISTS idx_account_offers_userId ON account_offers(userId);

@@ -9,11 +9,11 @@ function hexToBytes(hex) {
 }
 
 export async function verifyInteraction(publicKey, signature, timestamp, body) {
-  const { ed25519 } = await import("@noble/ed25519");
+  const ed = await import("@noble/ed25519");
   const msg = new TextEncoder().encode(timestamp + body);
   const sig = hexToBytes(signature);
   const pub = hexToBytes(publicKey);
-  return ed25519.verify(sig, msg, pub);
+  return ed.verify(sig, msg, pub);
 }
 
 export async function api(method, path, token, body = null) {
