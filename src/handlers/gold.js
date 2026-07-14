@@ -33,23 +33,25 @@ function goldEmbed(offer, applicantsText) {
   const remaining = parseQuantity(offer.remainingAmount || "0");
   const fullyClaimed = remaining <= 0;
   const status = fullyClaimed ? "🔴 Claimed" : "🟢 Available";
-  const payChar = offer.characterName && offer.characterName !== "N/A" ? ` | Char: \`${offer.characterName}\`` : "";
-  const lines = [
-    `${emoji} <@${offer.userId}>`,
-    `\`${formatNumber(offer.goldAmount)}\` gold @ \`${offer.price || "N/A"}\``,
-    `Payment: \`${offer.paymentMethod || "N/A"}\`${payChar}`,
-    `${status} | Remaining: \`${formatNumber(offer.remainingAmount)}\``,
+  const payChar = offer.characterName && offer.characterName !== "N/A" ? offer.characterName : "—";
+
+  const fields = [
+    { name: "Price", value: `\`${offer.price || "N/A"}\``, inline: true },
+    { name: "Quantity", value: `\`${formatNumber(offer.goldAmount)}\``, inline: true },
+    { name: "Status", value: status, inline: true },
+    { name: "Remaining", value: `\`${formatNumber(offer.remainingAmount)}\``, inline: true },
+    { name: "Character", value: `\`${payChar}\``, inline: true },
   ];
 
-  const fields = [];
   if (applicantsText && applicantsText !== "None") {
-    fields.push({ name: "Applicants", value: applicantsText, inline: false });
+    fields.push({ name: "\u200b", value: "**Applicants**", inline: false });
+    fields.push({ name: "\u200b", value: applicantsText, inline: false });
   }
 
   return {
     color: GALAXY_PURPLE,
     title: `${emoji} ${offer.operation} Gold`,
-    description: lines.join("\n"),
+    description: `<@${offer.userId}>`,
     fields,
     timestamp: offer.createdAt || new Date().toISOString(),
   };
